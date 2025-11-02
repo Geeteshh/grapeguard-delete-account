@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Delete Account — GrapeGuard</title>
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.6;color:#111;background:#f7fafc;padding:32px}
+    .container{max-width:820px;margin:0 auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.08)}
+    h1{font-size:1.6rem;margin-bottom:6px}
+    p.lead{color:#374151}
+    pre{background:#0f172a;color:#e6eef8;padding:12px;border-radius:8px;overflow:auto}
+    .btn{display:inline-block;padding:10px 14px;border-radius:8px;text-decoration:none;background:#0ea5a4;color:white}
+    ul{margin-left:1.1rem}
+    .small{font-size:.9rem;color:#475569}
+    .notice{background:#fff7ed;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:6px;margin-bottom:12px}
+    code{background:#eef2ff;padding:2px 6px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Account & Data Deletion — GrapeGuard</h1>
+    <p class="lead">This page explains how you can request deletion of your account and the associated data we hold (email & password stored in Firebase Authentication) for the <strong>GrapeGuard</strong> app.</p>
+
+    <div class="notice">
+      <strong>Important:</strong> This page is the official request channel for deleting accounts. After you submit a deletion request, we will delete your Firebase Authentication record (email/password) within <strong>7 business days</strong> unless otherwise stated below.
+    </div>
+
+    <h2>What data will be deleted</h2>
+    <ul>
+      <li><strong>Firebase Authentication:</strong> Email and password credentials stored in Firebase Auth will be deleted.</li>
+      <li><strong>Associated user profile data (if any):</strong> Any user document in Firestore/Realtime DB created under your account will be deleted when you request it (see note below).</li>
+      <li><strong>Supabase-stored images:</strong> Leaf images are stored in Supabase. If you want them deleted too, include that specifically in your request (we will delete Supabase images on request—see how to request below).</li>
+    </ul>
+
+    <h2>What data we keep (if any)</h2>
+    <ul>
+      <li>We do not retain your password after deletion (Firebase Auth entry removed).</li>
+      <li>If we have anonymous analytics or aggregated non-identifying logs, those remain as aggregated data and are not tied to your personal identity. (Not used for targeting.)</li>
+    </ul>
+
+    <h2>How to request deletion (choose one)</h2>
+    <ol>
+      <li>
+        <strong>Email request (recommended)</strong><br>
+        Click the button below to open your email client prefilled with a deletion request. Replace <code>[your-email@example.com]</code> with the email you used in the app and send.
+        <div style="margin-top:10px">
+          <a class="btn" href="mailto:REPLACE_WITH_YOUR_DEVELOPER_EMAIL?subject=Delete%20my%20GrapeGuard%20account&body=Hello%20GrapeGuard%20team%2C%0A%0APlease%20delete%20my%20GrapeGuard%20account%20and%20all%20associated%20data.%20My%20account%20email%20is%3A%20%5Byour-email%40example.com%5D.%0A%0APlease%20also%20delete%20the%20leaf%20images%20stored%20under%20this%20account%20%28if%20applicable%29.%0A%0AThanks%2C%0A%5BYour%20Name%5D">Request account deletion (email)</a>
+        </div>
+      </li>
+
+      <li style="margin-top:14px">
+        <strong>Contact form / support ticket</strong><br>
+        If you prefer, open a support ticket via the app or send a message from the in-app support screen and include the email used to register. Make sure to state: <em>"Delete my account and all associated data—Firebase Auth + Supabase images".</em>
+      </li>
+
+      <li style="margin-top:14px">
+        <strong>In-app deletion</strong><br>
+        If your app provides an in-app "Delete account" button (recommended), you can delete directly from the app. If the in-app option is not present, use the email method above.
+      </li>
+    </ol>
+
+    <h2>What we will do after receiving your request</h2>
+    <ul>
+      <li>We will verify the request is coming from the account owner (we may ask for simple proof, e.g., a confirmation email back to the registered address).</li>
+      <li>We will delete your Firebase Authentication record (email and password) and any associated user record from Firestore/Realtime DB where applicable.</li>
+      <li>If you asked for Supabase images to be removed, we will delete files stored in Supabase storage that are tied to your account.</li>
+      <li>Deletion timeframe: <strong>up to 7 business days</strong> from verification, unless we inform you of a longer retention requirement for legal reasons.</li>
+    </ul>
+
+    <h2>Developer (public) deletion process — technical transparency</h2>
+    <p class="small">Below is the code we run as developers (server-side) to delete a user from Firebase Auth and remove associated Data. This is shown for transparency only — you don't need to run this yourself.</p>
+
+    <pre><code>// Node.js (Firebase Admin SDK) - delete by email
+const admin = require('firebase-admin');
+// initialize with your service account (do NOT expose this file publicly)
+admin.initializeApp({
+  credential: admin.credential.cert(require('./serviceAccountKey.json'))
+});
+
+async function deleteUserByEmail(email) {
+  try {
+    const user = await admin.auth().getUserByEmail(email);
+    const uid = user.uid;
+
+    // delete auth entry
+    await admin.auth().deleteUser(uid);
+
+    // delete Firestore user doc (example path)
+    const db = admin.firestore();
+    await db.collection('users').doc(uid).delete();
+
+    // if you store files in Firebase Storage:
+    // const bucket = admin.storage().bucket();
+    // await bucket.deleteFiles({ prefix: `uploads/${uid}/` });
+
+    console.log('User deleted:', email);
+  } catch (err) {
+    console.error('Delete failed:', err);
+    throw err;
+  }
+}
+</code></pre>
+
+    <h2>Privacy & retention</h2>
+    <ul>
+      <li>After deletion, your Firebase Auth entry (email/password) and user profile will be removed.</li>
+      <li>Backups and logs that include identifying information may be retained for up to 30 days to complete the deletion and for fraud-prevention or legal obligations; otherwise they will be purged.</li>
+    </ul>
+
+    <h2>Contact / developer</h2>
+    <p class="small">Developer: <strong>Geetesh Arvind Guram</strong><br>
+    Replace the email below with the developer address before publishing.</p>
+    <p><a href="mailto:REPLACE_WITH_YOUR_DEVELOPER_EMAIL">REPLACE_WITH_YOUR_DEVELOPER_EMAIL</a></p>
+
+    <hr>
+    <p class="small">How to publish on GitHub Pages: create a repository (e.g., <code>grapeguard-delete-account</code>), add this file as <code>index.html</code>, push to the <code>main</code> branch, and enable <strong>GitHub Pages → main branch</strong> in repository settings. Then use the resulting URL (example: <code>https://USERNAME.github.io/grapeguard-delete-account/</code>) as your Play Console "Delete account URL".</p>
+
+    <p style="margin-top:10px" class="small"><strong>Need changes?</strong> If you want me to replace the placeholder email with your actual developer email, or add a Supabase deletion snippet, tell me the email (or say "add Supabase code") and I'll update the page.</p>
+  </div>
+</body>
+</html>
